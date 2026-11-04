@@ -24,6 +24,13 @@ When a commit is pushed to the `main` branch (e.g., when a pull request merges),
    Set `<contributor>` to `true` to give the team push access on every repository that uses `local.contributor_teams` in `repositories.tf` (the working group teams), or `false` otherwise.
    Set `<maintainer>` to `true` or `false` (see the next section); a team that is not explicitly authorized to approve changes is `false`.
 
+### Who approves a change to this repository?
+
+- Every pull request to the default branch needs an approval of `github-config-owners` (a team of one person, `team-members/github-config-owners.csv`): the ruleset `owner-review` in `repositories.tf`. The author of a pull request cannot approve it, and the team has one member, so a pull request written by that owner can only be merged by an organization admin, who bypasses the ruleset (the owner is one). Add a second person to `team-members/github-config-owners.csv` to change that.
+- A pull request **merges by itself** once it has what it needs: the owner's approval, the team's approval for a team file, the other approvals and a green `pre-commit`. `.github/workflows/auto-merge.yaml` turns on GitHub's auto-merge for every pull request to the default branch that is not a draft, each time `pre-commit` has run for it (it runs when `pre-commit` ends, as a run of the default branch, so it adds no row to a pull request); GitHub merges it the moment the rules are met. A new commit drops the approvals (`dismiss_stale_reviews`), so nothing changes after it was reviewed. To keep a pull request from merging, make it a draft or request changes. The merge is made with the workflow's token, which starts no workflow, so `apply.yaml` follows on its schedule (every 4 hours) or by hand.
+- A change to `team-members/<team>.csv` also needs an approval from that team (`CODEOWNERS`), so that a team decides who joins it. A team that is secret or has no access to this repository cannot be a code owner (`fulfillment-wg`, `observability-wg`, `personas-wg`, `documentation-wg`, `org-admins`, `ci-duty`): its file has no rule and needs only the owners' approval.
+- When you add a team to `teams.csv` with `contributor` set to `true` and a `closed` privacy, add a line for its file to `CODEOWNERS` (`/team-members/<team>.csv @osac-project/<team>`).
+
 ### Let a team approve changes (be a maintainer)?
 
 1. Open `teams.csv`
